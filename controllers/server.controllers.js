@@ -1,6 +1,7 @@
 const { ServerModel } = require("../models/server.models");
 const fs = require("fs-extra");
 const { get_os, get_disk } = require("../utils/os");
+const { getLocalServer } = require("../utils/server.utils");
 
 exports.serverDetail = async (req, res) => {
   try {
@@ -40,5 +41,32 @@ exports.serverCreate = async (req, res) => {
   } catch (err) {
     console.log(err);
     return res.json({ error: true, msg: err?.message });
+  }
+};
+
+exports.updateDisk = async (req, res) => {
+  try {
+    const server = await getLocalServer();
+    const disk = await get_disk();
+    const updateDb = await ServerModel.updateOne(
+      {
+        _id: server?._id,
+        type: global.sv_type,
+      },
+      {
+        ...disk,
+      }
+    );
+    if (!updateDb?.matchedCount) {
+      const error = new Error("Someting went worng.");
+      error.code = 500;
+      throw error;
+    }
+    return res.status(200).json({ msg: "updated!" });
+  } catch (err) {
+    return res.status(error?.code || 500).json({
+      error: true,
+      msg: error?.message,
+    });
   }
 };
